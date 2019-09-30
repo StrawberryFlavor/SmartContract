@@ -156,7 +156,14 @@ def main(operation, args):
         if len(args) != 2:
             return False
         return query_bets_note(args[0], args[1])
-
+    if operation == "get_promotion_reward":
+        if len(args) != 1:
+            return False
+        return get_promotion_reward(args[0])
+    if operation == "get_stake_issue":
+        if len(args) != 1:
+            return False
+        return get_stake_issue(args[0])
     return False
 
 
@@ -323,7 +330,7 @@ def stake(number, amount, invitation_code):  # 用户投注
         ls.append(rd)
         PutArray(stake_all_key, ls)  # 记录我的投注记录期号
     else:
-        periods_exceeds_list = get_periods_exceeds(sender_address)  # 返回去掉三天外的数组
+        periods_exceeds_list = get_periods_exceeds(sender_address, rd)  # 返回去掉三天外的数组
         PutArray(stake_all_key, periods_exceeds_list)
 
     numbers = GetArray(number_key)
@@ -515,7 +522,7 @@ def withdraw(draws):  # 根据期数兑奖
             user_pool_amount = user_pool_amount + withdraws_thrid_amount
             continue
 
-    if withdraws_all_amount > 0:  # 如果中奖则给其转账
+    if withdraws_all_amount > 0:                    # 如果中奖则给其转账,并判断邀请逻辑
         inviter_address = query_my_inviter(sender)  # 上级地址
         event_pool = ppool()                 # 查询活动奖池额度
         sys_pool = syspool()                     # 查询系统奖池额度
@@ -533,7 +540,7 @@ def withdraw(draws):  # 根据期数兑奖
             else:
                 promotion_amount = sender_reward_list[0]  # 推广奖励
                 promoted_amount = int(sender_reward_list[1])  # 被推广奖励
-                PutArray(promotion_amount, str(promoted_amount + pted_event_amount))  # 提交自己的被推广奖励
+                PutArray(sr_key, [promotion_amount, str(promoted_amount + pted_event_amount)])  # 提交自己的被推广奖励
 
             rd = int(GetRand(1))  # 随机字符串
             pro_event_amount = min + rd * (max - min) * event_pool / 9000
@@ -545,7 +552,7 @@ def withdraw(draws):  # 根据期数兑奖
             else:
                 promotion_amount = int(invited_reward_list[0])  # 推广奖励
                 promoted_amount = invited_reward_list[1]  # 被推广奖励
-                PutArray(str(promotion_amount + pro_event_amount), promoted_amount)  # 提交推广者的推广奖励
+                PutArray(sr_key, [str(promotion_amount + pro_event_amount), promoted_amount])  # 提交推广者的推广奖励
 
             ContractBalanceSend(sender, GARD_DENOM, pted_event_amount)                       # 给投注人转入被邀请奖励
             ContractBalanceSend(inviter_address, GARD_DENOM, pro_event_amount)              # 给邀请人转推广奖励
@@ -700,14 +707,16 @@ def get_stake_account(address):  # 我的投注统计
     return GetArray(stake_count_key)
 
 
-def get_periods_exceeds(address):  # 返回一个三天内的投注列表
-    if not IsValid(address):
-        raise Exception("地址格式错误")
+def get_stake_issue(address):           # 我的投注列表
+    stake_all_key = concat(KEY_MY_ALL_STAKE, address)
+    return GetArray(stake_all_key)  # 期数列表
+
+
+def get_periods_exceeds(address, rd):  # 返回一个三天内的投注列表
     stake_all_key = concat(KEY_MY_ALL_STAKE, address)  # 我所有的投注期号记录，只记录三天以内的
     stake_all_value = GetArray(stake_all_key)  # 期数列表
-    now_time = get_period_generation()  # 当前期数
 
     for i in range(len(stake_all_value)):
-        if int(now_time) - int(stake_all_value[i]) > 100:  # 大于1天
+        if int(rd) - int(stake_all_value[i]) > 100 or rd == stake_all_value[i]:                 # 大于1天或者有重复的
             stake_all_value = list_remove_elt(stake_all_value, stake_all_value[i])             # 每次循环判断是否大于三天，然后去除赋值
-    return stake_all_value
+    return stake_all_value.append(rd)
