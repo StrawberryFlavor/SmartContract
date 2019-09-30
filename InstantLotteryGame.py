@@ -9,7 +9,7 @@ from hashgard.interop.System.Bank import ContractAccAddressGet, ContractBalanceS
 
 GARD_DENOM = 'agard'
 GARD_FACTOR = 1000000000000000000
-OWNER = 'gard1lptjywa93atglpkwzexn7s59l6wngf705jz0ad'
+OWNER = 'gard1xvn48vn3ljwk2d3vynv8ugkl373d93tfp9zae3'
 KEY_OWNER = OWNER
 KEY_SYSTEM_POOL = "system_prize_pool"
 KEY_USER_POOL = "user_prize_pool"
@@ -243,17 +243,18 @@ def get_pid():  # 获取当前期数pid，主要用于判断是否已经过了�
 
 
 def system_prize_pool_inject(amount):  # 给系统奖池授予额度
-
-    if BalanceOf(GetTxSender(), [GARD_DENOM])[0] < amount:  # 判断余额是否足够初始化
+    sender = GetTxSender()
+    if BalanceOf(sender, [GARD_DENOM])[0] < amount:  # 判断余额是否足够初始化
         raise Exception("余额不足")
 
-    if not Get(KEY_SYSTEM_POOL):
+    sys_pool = Get(KEY_SYSTEM_POOL)
+    if not sys_pool:
         ContractBalanceInject(Get(KEY_OWNER), GARD_DENOM, amount)
         Put(KEY_SYSTEM_POOL, amount)  # 记录系统奖池额度
         return True
 
-    balance_amount = Get(KEY_SYSTEM_POOL) + amount
-    ContractBalanceInject(Get(KEY_OWNER), GARD_DENOM, balance_amount)
+    balance_amount = sys_pool + amount
+    ContractBalanceInject(sender, GARD_DENOM, balance_amount)
     Put(KEY_SYSTEM_POOL, balance_amount)  # 记录总的奖池额度
     return True
 
@@ -592,10 +593,16 @@ def get_redemption_information(sender_address, draws):  # 查询该地址对应�
 
 def set_event_pool(amount):  # 设立活动奖池
     sender_address = GetTxSender()
-    if sender_address != Get(OWNER):  # 只有Owner能设立
-        return False
-    Put(KEY_EVENT_POOL, amount)
-    ContractBalanceInject(sender_address, GARD_DENOM, amount)
+    if BalanceOf(sender_address, [GARD_DENOM])[0] < amount:  # 判断余额是否足够初始化
+        raise Exception("余额不足")
+    event_pool = Get(KEY_EVENT_POOL)
+    if not event_pool:
+        ContractBalanceInject(sender_address, GARD_DENOM, amount)
+        Put(KEY_EVENT_POOL, amount)
+        return True
+    balance_amount = event_pool + amount
+    Put(KEY_EVENT_POOL, balance_amount)
+    ContractBalanceInject(sender_address, GARD_DENOM, balance_amount)
     return True
 
 
@@ -636,12 +643,9 @@ def query_my_inviter(sender_address):  # 查询该地址的上级邀请人
 
 def invitation_code_generation():  # 邀请码生成
     sender = GetTxSender()  # 获取当前操作人
-    if query_user_invitation_code(sender):
-        raise Exception("当前地址已经生成过邀请码")
-    invitation_code = GetRand(4)  # 获取邀请码
-    while True:
+    for i in range(5, len(sender)):
+        invitation_code = concat(concat(sender[i], sender[i+1]), concat(sender[i+2], sender[i+3]))
         if query_invitation_code_user(invitation_code):  # 判断该邀请码是否已经有归属地址
-            invitation_code = GetRand(4)
             continue
         else:
             key = concat(KEY_INVITATION_CODE, sender)
@@ -650,6 +654,20 @@ def invitation_code_generation():  # 邀请码生成
             Put(key, sender)  # 提交邀请码对应的人的信息
             break
     return True
+    # if query_user_invitation_code(sender):
+    #     raise Exception("当前地址已经生成过邀请码")
+    # invitation_code = GetRand(4)  # 获取邀请码
+    # while True:
+    #     if query_invitation_code_user(invitation_code):  # 判断该邀请码是否已经有归属地址
+    #         invitation_code = GetRand(4)
+    #         continue
+    #     else:
+    #         key = concat(KEY_INVITATION_CODE, sender)
+    #         Put(key, invitation_code)  # 提交用户的邀请码信息
+    #         key = concat(KEY_INVITATION_CODE, invitation_code)
+    #         Put(key, sender)  # 提交邀请码对应的人的信息
+    #         break
+    # return True
 
 
 def first_prize_match(draws, number):  # 一等奖匹配规则
