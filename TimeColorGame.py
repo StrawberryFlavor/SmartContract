@@ -61,7 +61,9 @@ def main(operation, args):
     if operation == "if_lottery":
         return if_lottery()
     if operation == "get_draw_calculation_note":
-        return get_draw_calculation_note()
+        if len(args) != 1:
+            return False
+        return get_draw_calculation_note(args[0])
     if operation == "get_pid":
         return get_pid()
     if operation == "withdraw_system_pool":
@@ -147,9 +149,9 @@ def main(operation, args):
             return False
         return get_stake_account(args[0])
     if operation == "get_periods_exceeds":
-        if len(args) != 1:
+        if len(args) != 2:
             return False
-        return get_periods_exceeds(args[0])
+        return get_periods_exceeds(args[0], args[1])
     if operation == "contractAccount":
         return contractAccount()
     if operation == "query_bets_note":
@@ -227,8 +229,7 @@ def if_lottery():  # 判断是否可以开奖
     return False
 
 
-def get_draw_calculation_note():  # 查询当前期数的总共投注次数
-    number_draws = Get(KEY_NUMBER_DRAWS)  # 当前期数
+def get_draw_calculation_note(number_draws):  # 查询期数的总共投注次数
     note_key = concat(number_draws, KEY_CALUCLATION_NOTE)
     return Get(note_key)
 
