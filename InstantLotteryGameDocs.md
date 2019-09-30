@@ -112,6 +112,14 @@ hashgardcli query contract method contract339f6497499d4bde83ac3d19b54903ec5405be
 
 
 
+### 开奖
+
+```shell
+hashgardcli tx contract call contractaf4e12578e579affc09dd434c8faee45c1060778 "string:draw" --from wind -y
+```
+
+
+
 ### 兑奖
 
 ```shell
@@ -161,4 +169,12 @@ hashgardcli query contract method contract339f6497499d4bde83ac3d19b54903ec5405be
 参数为要查询的期号
 
 
+
+### 我的投注期数
+
+```shell
+hashgardcli query contract method contractaf4e12578e579affc09dd434c8faee45c1060778  "string:get_stake_issue,[string:$walletaddress]" --return array
+```
+
+参数为需要查询的钱包地址
 

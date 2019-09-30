@@ -654,20 +654,6 @@ def invitation_code_generation():  # 邀请码生成
             Put(key, sender)  # 提交邀请码对应的人的信息
             break
     return True
-    # if query_user_invitation_code(sender):
-    #     raise Exception("当前地址已经生成过邀请码")
-    # invitation_code = GetRand(4)  # 获取邀请码
-    # while True:
-    #     if query_invitation_code_user(invitation_code):  # 判断该邀请码是否已经有归属地址
-    #         invitation_code = GetRand(4)
-    #         continue
-    #     else:
-    #         key = concat(KEY_INVITATION_CODE, sender)
-    #         Put(key, invitation_code)  # 提交用户的邀请码信息
-    #         key = concat(KEY_INVITATION_CODE, invitation_code)
-    #         Put(key, sender)  # 提交邀请码对应的人的信息
-    #         break
-    # return True
 
 
 def first_prize_match(draws, number):  # 一等奖匹配规则
