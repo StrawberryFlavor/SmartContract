@@ -249,7 +249,7 @@ def system_prize_pool_inject(amount):  # 给系统奖池授予额度
 
     sys_pool = Get(KEY_SYSTEM_POOL)
     if not sys_pool:
-        ContractBalanceInject(Get(KEY_OWNER), GARD_DENOM, amount)
+        ContractBalanceInject(sender, GARD_DENOM, amount)
         Put(KEY_SYSTEM_POOL, amount)  # 记录系统奖池额度
         return True
 
@@ -733,8 +733,11 @@ def get_stake_issue(address):           # 我的投注列表
 def get_periods_exceeds(address, rd):  # 返回一个三天内的投注列表
     stake_all_key = concat(KEY_MY_ALL_STAKE, address)  # 我所有的投注期号记录，只记录三天以内的
     stake_all_value = GetArray(stake_all_key)  # 期数列表
-
+    list = []
     for i in range(len(stake_all_value)):
-        if int(rd) - int(stake_all_value[i]) > 100 or rd == stake_all_value[i]:                 # 大于1天或者有重复的
-            stake_all_value = list_remove_elt(stake_all_value, stake_all_value[i])             # 每次循环判断是否大于三天，然后去除赋值
-    return stake_all_value.append(rd)
+        sub = int(rd) - int(stake_all_value[i])
+        if 0 < sub <= 100:                 # 大于1天或者有重复的
+            # stake_all_value = list_remove_elt(stake_all_value, stake_all_value[i])             # 每次循环判断是否大于三天，然后去除赋值
+            list.append(stake_all_value[i])
+    list.append(rd)
+    return list
