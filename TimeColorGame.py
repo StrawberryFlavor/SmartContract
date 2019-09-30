@@ -528,10 +528,9 @@ def withdraw(draws):  # 根据期数兑奖
         sys_pool = syspool()                     # 查询系统奖池额度
         user_pool = stakepool()              # 查询活动奖池
         if inviter_address and event_pool > 0:          # 如果存在邀请者，并或活动奖池大于0
-            min = 1
-            max = 10
+
             rd = int(GetRand(1))  # 随机字符串
-            pted_event_amount = min + rd * (max - min) * event_pool / 9000  # 分配随机 0.1% 到 1% 不等
+            pted_event_amount = event_pool / 1000 + event_pool * rd / 1000  # 分配随机 0.1% 到 1% 不等
 
             sr_key = concat(KEY_SHARED_REWARD, sender)                      # 被邀请的被推广奖励
             sender_reward_list = GetArray(sr_key)
@@ -543,7 +542,7 @@ def withdraw(draws):  # 根据期数兑奖
                 PutArray(sr_key, [promotion_amount, str(promoted_amount + pted_event_amount)])  # 提交自己的被推广奖励
 
             rd = int(GetRand(1))  # 随机字符串
-            pro_event_amount = min + rd * (max - min) * event_pool / 9000
+            pro_event_amount = event_pool / 1000 + event_pool * rd / 1000           # 分配随机 0.1% 到 1% 不等
 
             sr_key = concat(KEY_SHARED_REWARD, inviter_address)                     # 推广者的推广奖励
             invited_reward_list = GetArray(sr_key)                        # 邀请者
