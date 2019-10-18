@@ -2,8 +2,8 @@ Cversion = '1.0.0'
 
 from hashgard.interop.System.Storage import Get, Put, PutArray, GetArray
 from hashgard.interop.System.Runtime import GetTxSender, GetTime, GetRand, TimeFormat, Assert
-from hashgard.builtins import concat, substr, append
-from hashgard.libgard import join, split, list_remove_elt, int, str
+from hashgard.vmop.Builtins import concat, substr
+from hashgard.libop.String import join, split, int, str
 from hashgard.interop.System.Account import IsValid
 from hashgard.interop.System.Bank import ContractAccAddressGet, ContractBalanceSend, ContractBalanceInject, BalanceOf
 
@@ -11,33 +11,33 @@ GARD_DENOM = 'agard'
 GARD_FACTOR = 1000000000000000000
 OWNER = 'gard1xvn48vn3ljwk2d3vynv8ugkl373d93tfp9zae3'
 KEY_OWNER = OWNER
-KEY_SYSTEM_POOL = "system_prize_pool"       # 系统奖池
-KEY_USER_POOL = "user_prize_pool"           # 用户奖池
-KEY_EVENT_POOL = "event_prize_pool"         # 活动奖池
-KEY_MY_ALL_STAKE = "my_sake"                # 我的投注记录
-KEY_MY_STAKE_COUNT = "my_stake_count"       # 我的投注统计
+KEY_SYSTEM_POOL = "system_prize_pool"  # 系统奖池
+KEY_USER_POOL = "user_prize_pool"  # 用户奖池
+KEY_EVENT_POOL = "event_prize_pool"  # 活动奖池
+KEY_MY_ALL_STAKE = "my_sake"  # 我的投注记录
+KEY_MY_STAKE_COUNT = "my_stake_count"  # 我的投注统计
 
-KEY_BETTING_AMOUNT = "betting_amount"       # 投注金额
-KEY_BETTING_NUMBER = "betting_number"       # 投注号码
-KEY_SHARED_REWARD = "shared_reward"         # 推广奖励计数
-KEY_INVITED_RECORD = "invited_record"       # 被邀请记录
-KEY_INVITATION_RECORD = "invitation_record" # 邀请记录
-KEY_INVITATION_CODE = "invitation_code"     # 邀请码
+KEY_BETTING_AMOUNT = "betting_amount"  # 投注金额
+KEY_BETTING_NUMBER = "betting_number"  # 投注号码
+KEY_SHARED_REWARD = "shared_reward"  # 推广奖励计数
+KEY_INVITED_RECORD = "invited_record"  # 被邀请记录
+KEY_INVITATION_RECORD = "invitation_record"  # 邀请记录
+KEY_INVITATION_CODE = "invitation_code"  # 邀请码
 
 KEY_AMOUNT_EACH_AWARD = "amount_of_each_award"  # 每期中奖额度信息
-KEY_PRIZE_NUMBER = "prize_number"               # 中奖号码
-KEY_LOTTERY_USER = "lottery_user_info"          # 开奖时的信息
-KEY_REDEMPTION_USER = "redemption"              # 兑奖时的信息
-KEY_NUMBER_DRAWS = "now_number_draws"           # 投注期数
-KEY_WITZHDRAWS_STATUS = "withdraw_status"       # 用户的兑奖状态
+KEY_PRIZE_NUMBER = "prize_number"  # 中奖号码
+KEY_LOTTERY_USER = "lottery_user_info"  # 开奖时的信息
+KEY_REDEMPTION_USER = "redemption"  # 兑奖时的信息
+KEY_NUMBER_DRAWS = "now_number_draws"  # 投注期数
+KEY_WITZHDRAWS_STATUS = "withdraw_status"  # 用户的兑奖状态
 
-KEY_LAST_NUMBER_DRAWS = "last_number_draws"     # 最后一期的期数
-KEY_CALUCLATION_NOTE = "calculation_note"       # 用以计算投注数
+KEY_LAST_NUMBER_DRAWS = "last_number_draws"  # 最后一期的期数
+KEY_CALUCLATION_NOTE = "calculation_note"  # 用以计算投注数
 KEY_NUMBER_BETS_PEER_ISSUE = "Number_of_bets_per_issue"  # 每一期每一柱的投注详情
-KEY_USER_BETS = "user_bets"                             # 允许用户的最大投注次数
-KEY_ISSUE_ACCOUNT = "issue_account"                     # 累计中奖额度信息
-KEY_PERIODS_LIST = "periods_list"                       # 存放期号列表
-KEY_PERIODS_TIME = "periods_time"                       # 期号对应的时间
+KEY_USER_BETS = "user_bets"  # 允许用户的最大投注次数
+KEY_ISSUE_ACCOUNT = "issue_account"  # 累计中奖额度信息
+KEY_PERIODS_LIST = "periods_list"  # 存放期号列表
+KEY_PERIODS_TIME = "periods_time"  # 期号对应的时间
 KEY_DRAWS_PID = "pid"
 KEY_GAME_START_TIME = 1567267200
 KEY_GAME_TIME_FOR_A_ROUND = 3600  # 3600 一个小时
@@ -190,15 +190,15 @@ def init():
         return False
 
     now_time = GetTime()
-    Put(KEY_OWNER, OWNER)                                   # 添加owner 地址
-    Put(KEY_NUMBER_DRAWS, get_period_generation())          # 当前期数 ,格式：20190925
+    Put(KEY_OWNER, OWNER)  # 添加owner 地址
+    Put(KEY_NUMBER_DRAWS, get_period_generation())  # 当前期数 ,格式：20190925
     draws_time_key = concat(Get(KEY_NUMBER_DRAWS), KEY_PERIODS_TIME)
-    Put(draws_time_key, now_time)                           # 当前期号对应的时间戳
+    Put(draws_time_key, now_time)  # 当前期号对应的时间戳
     note_key = concat(Get(KEY_NUMBER_DRAWS), KEY_CALUCLATION_NOTE)
-    Put(note_key, 0)                                        # 投注数
+    Put(note_key, 0)  # 投注数
     key = concat(Get(KEY_NUMBER_DRAWS), KEY_DRAWS_PID)
     Put(key, get_pid())  # 初始期数的pid
-    PutArray(KEY_PERIODS_LIST, [Get(KEY_NUMBER_DRAWS)])     # 存放一天内的期号列表
+    PutArray(KEY_PERIODS_LIST, [Get(KEY_NUMBER_DRAWS)])  # 存放一天内的期号列表
     return True
 
 
@@ -234,14 +234,14 @@ def query_draws_pid():  # 查询当前期数对应的pid
     return Get(key)
 
 
-def lastissue():      # 最后一期期数
+def lastissue():  # 最后一期期数
     last_draw = GetArray(KEY_LAST_NUMBER_DRAWS)
     return last_draw
 
 
 def if_lottery():  # 判断是否可以开奖
     rd = Get(KEY_NUMBER_DRAWS)  # 当前期
-    note_key = concat(rd, KEY_CALUCLATION_NOTE)         # 这一期的的投注次数
+    note_key = concat(rd, KEY_CALUCLATION_NOTE)  # 这一期的的投注次数
     notes = Get(note_key)
     pid = get_pid()  # 当前的pid
     if notes > 0 and pid > query_draws_pid():  # 判断当前期数的pid 是不是还未动，因为pid是个递增的 并且判断当前是否有人投注
@@ -257,7 +257,7 @@ def get_draw_calculation_note(number_draws):  # 查询期数的总共投注次�
 def get_pid():  # 获取当前期数pid，主要用于判断是否已经过了一小时
     time = GetTime()
     pid = ((time - KEY_GAME_START_TIME) - (
-                time - KEY_GAME_START_TIME) % KEY_GAME_TIME_FOR_A_ROUND) / KEY_GAME_TIME_FOR_A_ROUND
+            time - KEY_GAME_START_TIME) % KEY_GAME_TIME_FOR_A_ROUND) / KEY_GAME_TIME_FOR_A_ROUND
     return pid
     # 返回是个int
 
@@ -331,7 +331,7 @@ def stake(number, amount, invitation_code):  # 用户投注
         Put(KEY_USER_POOL, amount + now_user_pool)  # 添加入总的用户池额度
 
     now_issue_stakepool = query_issue_stakepool(rd)
-    issue_stakepool_key = concat(rd, KEY_USER_POOL)             # 当期的用户池总额度
+    issue_stakepool_key = concat(rd, KEY_USER_POOL)  # 当期的用户池总额度
     if now_issue_stakepool > 0:
         Put(issue_stakepool_key, now_issue_stakepool + amount)
     else:
@@ -346,7 +346,7 @@ def stake(number, amount, invitation_code):  # 用户投注
     betting_record_key = concat(concat(KEY_NUMBER_BETS_PEER_ISSUE, rd), str(now_note))  # 每一期的投注记录 key
 
     user_info = [str(now_time), sender_address, number, str(amount)]  # 保存为一个数组
-    Assert(user_info[3] == str(amount), "erro")        # 输出address
+    Assert(user_info[3] == str(amount), "erro")  # 输出address
     PutArray(betting_record_key, user_info)  # 记录投注记录
 
     number_key = concat(concat(rd, KEY_BETTING_NUMBER), sender_address)  # 用户的投注号码
@@ -411,9 +411,9 @@ def stakepool():  # 查询用户奖池额度
     return Get(KEY_USER_POOL)
 
 
-def query_issue_stakepool(rd):        # 查询该期数的所有用户投注金额
+def query_issue_stakepool(rd):  # 查询该期数的所有用户投注金额
     key = concat(rd, KEY_USER_POOL)
-    return Get(key)                     # 返回int
+    return Get(key)  # 返回int
 
 
 def query_users_number(sender_address, rd):  # 查询该地址对应期数，查询用户的所有投注号码
@@ -446,8 +446,8 @@ def draw():  # 开奖
     sys_pool = syspool()  # 当前的系统奖池额度
     now_users_pool = stakepool()  # 当前用户池额度
 
-    now_time = GetTime()                        # 获取当前时间
-    prize_number = GetRand(3)                   # 生成中奖号码
+    now_time = GetTime()  # 获取当前时间
+    prize_number = GetRand(3)  # 生成中奖号码
     prize_key = concat(KEY_PRIZE_NUMBER, draws)
     Put(prize_key, prize_number)  # 记录每一期的中奖号码
 
@@ -480,7 +480,8 @@ def draw():  # 开奖
             continue
 
     award_key = concat(draws, KEY_AMOUNT_EACH_AWARD)  # 中奖额度信息
-    PutArray(award_key, [str(sys_pool), str(now_users_pool), str(fist_amount), str(second_amount), str(thrid_amount)])  # 记录每一期的中奖额度信息
+    PutArray(award_key, [str(sys_pool), str(now_users_pool), str(fist_amount), str(second_amount),
+                         str(thrid_amount)])  # 记录每一期的中奖额度信息
 
     PutArray(KEY_LAST_NUMBER_DRAWS, [draws, str(now_time)])  # 最后一期期数和期数结束时间
 
@@ -492,22 +493,30 @@ def draw():  # 开奖
     Put(key, now_pid)  # 更改这期的pid
 
     draws_time_key = concat(draws, KEY_PERIODS_TIME)
-    Put(draws_time_key, now_time)                           # 当前期号对应的时间戳
+    Put(draws_time_key, now_time)  # 当前期号对应的时间戳
 
     all_periods = query_periods_list()
     list = []
     for i in range(len(all_periods)):
         list.append(all_periods[i])
+    new_list = []
     if len(list) == 24:
-        list = list[1:]
-    list.append(draws)
-    PutArray(KEY_PERIODS_LIST, list)                    # 所有列表 24 个
+        for i in range(len(list)):
+            if i != len(list) - 1:
+                new_list.append(list[i + 1])
+            else:
+                break
+        new_list.append(draws)
+        PutArray(KEY_PERIODS_LIST, new_list)
+    else:
+        list.append(draws)
+        PutArray(KEY_PERIODS_LIST, list)  # 记录之前的期数，最多24个
 
     ContractBalanceSend(sender, GARD_DENOM, lettry_amount)  # 给开奖人奖金
     return True
 
 
-def query_bets_note(draws, notes):              # 返回对应期数和对应注数的信息
+def query_bets_note(draws, notes):  # 返回对应期数和对应注数的信息
     betting_record_key = concat(concat(KEY_NUMBER_BETS_PEER_ISSUE, draws), notes)
     betting_info = GetArray(betting_record_key)
     return betting_info
@@ -536,24 +545,24 @@ def withdraw(draws):  # 根据期数兑奖
     if len(query_users_number(sender, draws)) == 0:
         raise Exception("当前期数没有投注")
 
-    if time - last_draws_time >= 60 * 60 * 24 * 1:              # 计算是否超过一天
+    if time - last_draws_time >= 60 * 60 * 24 * 1:  # 计算是否超过一天
         raise Exception("当前已经超过一天未兑奖，无法兑现")
 
-    amount_award_list = query_amount_award(draws)               # 查询每一期的中奖额度信息
-    lottery_sys_pool = int(amount_award_list[0])                     # 开奖时的系统池额度
-    lottery_users_pool = int(amount_award_list[1])                   # 开奖时的用户池额度
-    fist_pool_amount = int(amount_award_list[2])                     # 开奖时候的一等奖额度
-    second_pool_amount = int(amount_award_list[3])                   # 开奖时候的二等奖额度
-    thrid_pool_amount = int(amount_award_list[4])                    # 开奖时候的三等奖额度
+    amount_award_list = query_amount_award(draws)  # 查询每一期的中奖额度信息
+    lottery_sys_pool = int(amount_award_list[0])  # 开奖时的系统池额度
+    lottery_users_pool = int(amount_award_list[1])  # 开奖时的用户池额度
+    fist_pool_amount = int(amount_award_list[2])  # 开奖时候的一等奖额度
+    second_pool_amount = int(amount_award_list[3])  # 开奖时候的二等奖额度
+    thrid_pool_amount = int(amount_award_list[4])  # 开奖时候的三等奖额度
 
-    numbers = query_users_number(sender, draws)                 # 用户投注的所有号码
-    withdraws_all_amount = 0                                    # 应该获取到的所有奖金额度
-    user_pool_amount = 0                                        # 应该要减去的用户奖池额度
-    sys_pool_amount = 0                                         # 应该要减去的系统奖池额度
+    numbers = query_users_number(sender, draws)  # 用户投注的所有号码
+    withdraws_all_amount = 0  # 应该获取到的所有奖金额度
+    user_pool_amount = 0  # 应该要减去的用户奖池额度
+    sys_pool_amount = 0  # 应该要减去的系统奖池额度
 
-    fist_withdraws_amount = 0                                   # 用户兑奖的一等奖额度
-    second_withdraws_amount = 0                                 # 用户兑奖的二等奖额度
-    thrid_withdraws_amount = 0                                  # 用户兑奖的三等奖额度
+    fist_withdraws_amount = 0  # 用户兑奖的一等奖额度
+    second_withdraws_amount = 0  # 用户兑奖的二等奖额度
+    thrid_withdraws_amount = 0  # 用户兑奖的三等奖额度
 
     for num in numbers:  # 遍历所有号码
         if first_prize_match(draws, num):
@@ -579,17 +588,20 @@ def withdraw(draws):  # 根据期数兑奖
             thrid_withdraws_amount = thrid_withdraws_amount + withdraws_thrid_amount
             continue
 
-    if withdraws_all_amount > 0:                    # 如果中奖则给其转账,并判断邀请逻辑
+    if withdraws_all_amount > 0:  # 如果中奖则给其转账,并判断邀请逻辑
         inviter_address = query_my_inviter(sender)  # 上级地址
-        event_pool = ppool()                 # 查询活动奖池额度
-        sys_pool = syspool()                     # 查询系统奖池额度
-        user_pool = stakepool()              # 查询活动奖池
-        if inviter_address and event_pool > 0:          # 如果存在邀请者，并或活动奖池大于0
+        event_pool = ppool()  # 查询活动奖池额度
+        sys_pool = syspool()  # 查询系统奖池额度
+        user_pool = stakepool()  # 查询活动奖池
+        if inviter_address and event_pool > 0:  # 如果存在邀请者，并或活动奖池大于0
 
-            rd = int(GetRand(1))  # 随机字符串
-            pted_event_amount = event_pool / 1000 + event_pool * rd / 1000  # 分配随机 0.1% 到 1% 不等
+            # rd = int(GetRand(1))  # 随机字符串
+            # pted_event_amount = event_pool / 1000 + event_pool * rd / 1000  # 分配随机 0.1% 到 1% 不等
 
-            sr_key = concat(KEY_SHARED_REWARD, sender)                      # 被邀请的被推广奖励
+            rd = int(GetRand(4))
+            pted_event_amount = rd * GARD_FACTOR
+
+            sr_key = concat(KEY_SHARED_REWARD, sender)  # 被邀请的被推广奖励
             sender_reward_list = GetArray(sr_key)
             if len(sender_reward_list) == 0:
                 PutArray(sr_key, [str(0), str(pted_event_amount)])
@@ -598,11 +610,12 @@ def withdraw(draws):  # 根据期数兑奖
                 promoted_amount = int(sender_reward_list[1])  # 被推广奖励
                 PutArray(sr_key, [promotion_amount, str(promoted_amount + pted_event_amount)])  # 提交自己的被推广奖励
 
-            rd = int(GetRand(1))  # 随机字符串
-            pro_event_amount = event_pool / 1000 + event_pool * rd / 1000           # 分配随机 0.1% 到 1% 不等
+            # rd = int(GetRand(1))  # 随机字符串
+            # pro_event_amount = event_pool / 1000 + event_pool * rd / 1000  # 分配随机 0.1% 到 1% 不等
 
-            sr_key = concat(KEY_SHARED_REWARD, inviter_address)                     # 推广者的推广奖励
-            invited_reward_list = GetArray(sr_key)                        # 邀请者
+            pro_event_amount = rd * GARD_FACTOR
+            sr_key = concat(KEY_SHARED_REWARD, inviter_address)  # 推广者的推广奖励
+            invited_reward_list = GetArray(sr_key)  # 邀请者
             if len(invited_reward_list) == 0:
                 PutArray(sr_key, [str(pro_event_amount), str(0)])
             else:
@@ -610,33 +623,39 @@ def withdraw(draws):  # 根据期数兑奖
                 promoted_amount = invited_reward_list[1]  # 被推广奖励
                 PutArray(sr_key, [str(promotion_amount + pro_event_amount), promoted_amount])  # 提交推广者的推广奖励
 
-            ContractBalanceSend(sender, GARD_DENOM, pted_event_amount)                       # 给投注人转入被邀请奖励
-            ContractBalanceSend(inviter_address, GARD_DENOM, pro_event_amount)              # 给邀请人转推广奖励
+            ContractBalanceSend(sender, GARD_DENOM, pted_event_amount)  # 给投注人转入被邀请奖励
+            ContractBalanceSend(inviter_address, GARD_DENOM, pro_event_amount)  # 给邀请人转推广奖励
 
             now_event_pool = event_pool - pted_event_amount - pro_event_amount
-            Put(KEY_EVENT_POOL, now_event_pool)                                                 # 更新活动奖池额度
+            Put(KEY_EVENT_POOL, now_event_pool)  # 更新活动奖池额度
 
-        issue_account = query_issue_account()                            # 查询总的中奖额度信息
-        withdraw_account = query_withdraw_account(draws)                 # 查询该兑奖期的兑奖额度信息
+        issue_account = query_issue_account()  # 查询总的中奖额度信息
+        withdraw_account = query_withdraw_account(draws)  # 查询该兑奖期的兑奖额度信息
         withdraw_account_key = concat(KEY_ISSUE_ACCOUNT, draws)
         if len(issue_account) != 0:
             old_fist = int(issue_account[0])
             old_second = int(issue_account[1])
             old_thrid = int(issue_account[2])
-            PutArray(KEY_ISSUE_ACCOUNT, [str(old_fist + fist_withdraws_amount), str(old_second + second_withdraws_amount), str(old_thrid + thrid_withdraws_amount)])  # 提交总的中奖额度信息
+            PutArray(KEY_ISSUE_ACCOUNT,
+                     [str(old_fist + fist_withdraws_amount), str(old_second + second_withdraws_amount),
+                      str(old_thrid + thrid_withdraws_amount)])  # 提交总的中奖额度信息
         else:
-            PutArray(KEY_ISSUE_ACCOUNT, [str(fist_withdraws_amount), str(second_withdraws_amount), str(thrid_withdraws_amount)])        # 提交总的中奖额度信息
+            PutArray(KEY_ISSUE_ACCOUNT, [str(fist_withdraws_amount), str(second_withdraws_amount),
+                                         str(thrid_withdraws_amount)])  # 提交总的中奖额度信息
 
         if len(withdraw_account) != 0:
             old_withdraws_fist = int(withdraw_account[0])
             old_withdraws_second = int(withdraw_account[1])
             old_withdraws_thrid = int(withdraw_account[2])
-            PutArray(withdraw_account_key, [str(old_withdraws_fist + fist_withdraws_amount), str(old_withdraws_second + second_withdraws_amount), str(old_withdraws_thrid + thrid_withdraws_amount)])  # 提交指定期的兑奖额度信息
+            PutArray(withdraw_account_key, [str(old_withdraws_fist + fist_withdraws_amount),
+                                            str(old_withdraws_second + second_withdraws_amount),
+                                            str(old_withdraws_thrid + thrid_withdraws_amount)])  # 提交指定期的兑奖额度信息
         else:
-            PutArray(withdraw_account_key, [str(fist_withdraws_amount), str(second_withdraws_amount), str(thrid_withdraws_amount)])        # 提交指定期的兑奖额度信息
+            PutArray(withdraw_account_key, [str(fist_withdraws_amount), str(second_withdraws_amount),
+                                            str(thrid_withdraws_amount)])  # 提交指定期的兑奖额度信息
 
-        Put(KEY_USER_POOL, user_pool - user_pool_amount)            # 提交用户奖池
-        Put(KEY_SYSTEM_POOL, sys_pool - sys_pool_amount)            # 提交系统奖池额度
+        Put(KEY_USER_POOL, user_pool - user_pool_amount)  # 提交用户奖池
+        Put(KEY_SYSTEM_POOL, sys_pool - sys_pool_amount)  # 提交系统奖池额度
 
         stake_count_key = concat(KEY_MY_STAKE_COUNT, sender)  # 我的投注统计，包括投注的总 token，和获取奖励的总 token
         count_value = GetArray(stake_count_key)
@@ -648,7 +667,7 @@ def withdraw(draws):  # 根据期数兑奖
         PutArray(key, [str(time), str(withdraws_all_amount)])  # 提交用户的兑奖信息
 
         withdraw_status_key = concat(concat(KEY_WITZHDRAWS_STATUS, draws), sender)
-        Put(withdraw_status_key, True)                                 # 将用户此期的兑奖状态改成true
+        Put(withdraw_status_key, True)  # 将用户此期的兑奖状态改成true
         ContractBalanceSend(sender, GARD_DENOM, withdraws_all_amount)  # 给投注人转入获取的奖励
         return True
     else:
@@ -720,7 +739,7 @@ def query_my_inviter(sender_address):  # 查询该地址的上级邀请人
 def invitation_code_generation():  # 邀请码生成
     sender = GetTxSender()  # 获取当前操作人
     for i in range(5, len(sender)):
-        invitation_code = concat(concat(sender[i], sender[i+1]), concat(sender[i+2], sender[i+3]))
+        invitation_code = concat(concat(sender[i], sender[i + 1]), concat(sender[i + 2], sender[i + 3]))
         if query_invitation_code_user(invitation_code):  # 判断该邀请码是否已经有归属地址
             continue
         else:
@@ -787,48 +806,48 @@ def get_stake_account(address):  # 我的投注统计
     return GetArray(stake_count_key)
 
 
-def get_stake_issue(address):           # 我的投注列表
+def get_stake_issue(address):  # 我的投注列表
     stake_all_key = concat(KEY_MY_ALL_STAKE, address)
     return GetArray(stake_all_key)  # 期数列表
 
 
-def get_periods_exceeds(address, rd):                   # 返回一个一天内的投注列表
+def get_periods_exceeds(address, rd):  # 返回一个一天内的投注列表
     stake_all_key = concat(KEY_MY_ALL_STAKE, address)  # 我所有的投注期号记录，只记录三天以内的
-    stake_all_value = GetArray(stake_all_key)           # 期数列表
+    stake_all_value = GetArray(stake_all_key)  # 期数列表
     now_time = GetTime()
     list = []
     for i in range(len(stake_all_value)):
-        time = query_periods_time(stake_all_value[i])               # 根据期数查询时间戳
+        time = query_periods_time(stake_all_value[i])  # 根据期数查询时间戳
         sub = now_time - time
-        if rd != stake_all_value[i] and 0 < sub <= 60 * 60 * 24 * 1:                 # 小于1天和不重复的
+        if rd != stake_all_value[i] and 0 < sub <= 60 * 60 * 24 * 1:  # 小于1天和不重复的
             list.append(stake_all_value[i])
     list.append(rd)
     return list
 
 
-def query_issue_account():              # 查询累计中奖额度信息
+def query_issue_account():  # 查询累计中奖额度信息
     return GetArray(KEY_ISSUE_ACCOUNT)
 
 
-def query_withdraw_account(rd):         # 查询指定期数的中奖额度信息
+def query_withdraw_account(rd):  # 查询指定期数的中奖额度信息
     withdraw_account_key = concat(KEY_ISSUE_ACCOUNT, rd)
     return GetArray(withdraw_account_key)
 
 
-def query_periods_time(draws):               # 查询期数对应的时间戳
+def query_periods_time(draws):  # 查询期数对应的时间戳
     draws_time_key = concat(draws, KEY_PERIODS_TIME)
-    return Get(draws_time_key)                      # 当前期号对应的时间戳
+    return Get(draws_time_key)  # 当前期号对应的时间戳
 
 
-def query_periods_list():                      # 查询所有的期数列表，仅显示24个
+def query_periods_list():  # 查询所有的期数列表，仅显示24个
     return GetArray(KEY_PERIODS_LIST)
 
 
-def query_user_bet_num(rd, sender_address):                         # 查询用户对该期数的投注次数
+def query_user_bet_num(rd, sender_address):  # 查询用户对该期数的投注次数
     user_bets_key = concat(concat(KEY_USER_BETS, sender_address), rd)  # 用户投注次数
     return Get(user_bets_key)
 
 
-def query_user_withdraw_status(rd, address):                   # 查询用户指定期数的兑奖状态
+def query_user_withdraw_status(rd, address):  # 查询用户指定期数的兑奖状态
     withdraw_status_key = concat(concat(KEY_WITZHDRAWS_STATUS, rd), address)
     return Get(withdraw_status_key)
