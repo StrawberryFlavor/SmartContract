@@ -11,21 +11,21 @@ GARD_FACTOR = 1000000000000000000
 OWNER = 'gard1lptjywa93atglpkwzexn7s59l6wngf705jz0ad'
 
 BOX_NAME = "box_name"  # 存款盒子名称
-BOX_BOTTOM_LINE = 100 * GARD_FACTOR  # 最低总存款条件
+BOX_BOTTOM_LINE = 0 * GARD_FACTOR  # 最低总存款条件
 BOX_CEILING = 10000 * GARD_FACTOR  # 存款盒子的最多存款量
-BOX_PRICE = 1000 * GARD_FACTOR  # 存款盒子的每份最少所存量，存款数必须是此值的倍数
-BOX_INTEREST = 100 * GARD_FACTOR  # 存款盒子的利息的种类和数量
-BOX_START_TIME = 1571068800  # 用户可以存入存款盒子的时间。利息必须在接受存款时间之前，注入到存款盒子中
-BOX_ESTABLISHED = 1571155200  # 存款盒子的开始计息的时间
-BOX_MATURITY = 1571241600  # 存款盒子到期交割本金和利息时间
+BOX_PRICE = 10 * GARD_FACTOR  # 存款盒子的每份最少所存量，存款总量，用户所存数必须是此值的倍数
+BOX_INTEREST = 88 * GARD_FACTOR  # 存款盒子的利息的种类和数量
+BOX_START_TIME = 1571652000  # 用户可以存入存款盒子的时间。利息必须在接受存款时间之前，注入到存款盒子中
+BOX_LOCK_TIME = 1571652300  # 存款盒子的开始计息的时间
+BOX_END_TIME = 1571652600  # 存款盒子到期交割本金和利息时间
 BOX_TRANSFER_ON = False  # 用户存款后的存款凭证是否可以进行交易, 默认是关闭，一旦打开不能关闭
 
-KEY_BOX_STATUS = "key_box_status"  # 存款盒子状态，分别为发行期 issue , 存款吸纳期 absorb， 存款期 deposit
-ISSUE_STATUS = "issue"
-ABSORB_STATUS = "absorb"
-DEPOSIT_STATUS = "deposit"
-BOX_FAILED = "box_failed"
-BOX_END = "box_end"
+KEY_BOX_STATUS = "box_status"  # 存款盒子状态，分别为发行期 issue , 存款吸纳期 deposit， 锁定期 locking
+ISSUE_STATUS = "issue"  # 发行期
+DEPOSIT_STATUS = "deposit"  # 存款吸纳期
+LOCK_STATUS = "locking"  # 锁定期
+BOX_FAILED = "failed"
+BOX_END = "end"
 
 KEY_OWNER = OWNER
 KEY_BOX_TRANSFER_ON = BOX_TRANSFER_ON
@@ -35,7 +35,7 @@ KEY_BOX_DEPOSIT_AMOUNT = "deposit_amount"  # 存款数量
 KEY_USER_INJECT_INTEREST = "user_interest"  # 用户注入的利息
 KEY_USER_DEPOSIT_AMOUNT = "user_deposit_amount"  # 用户的存款数量
 
-KEY_USER_RECEIVE = "user_receive"   # 用户取出的利益
+KEY_USER_RECEIVE = "user_receive"  # 用户取出的利益
 
 KEY_ORG = "org"
 KEY_WEBSITE = "website"
@@ -64,10 +64,10 @@ def main(operation, args):
         return interest()
     if operation == "start_time":
         return start_time()
-    if operation == "established":
-        return established()
-    if operation == "maturity":
-        return maturity()
+    if operation == "lock_time":
+        return lock_time()
+    if operation == "end_time":
+        return end_time()
     if operation == 'contractKeys':
         return contract_keys()
     if operation == "description":
@@ -81,7 +81,7 @@ def main(operation, args):
     if operation == "logo":
         return logo()
     if operation == 'intro':
-        return contract_keys()
+        return intro()
     if operation == "query_interest_balance":
         return query_interest_balance()
     if operation == "query_user_inject_interest":
@@ -114,6 +114,10 @@ def main(operation, args):
         return redeem(args[0])
     if operation == "update_box_transfer_on":
         return update_box_transfer_on()
+    if operation == "box_transfer":
+        if len(args) != 1:
+            raise Exception("缺少参数")
+        return box_transfer(args[0])
     if operation == "withdraw":
         return withdraw()
     if operation == "query_user_profit":
@@ -168,17 +172,18 @@ def start_time():  # 查询用户可以存入存款盒子的时间。利息必�
     return BOX_START_TIME
 
 
-def established():  # 查询存款盒子的开始计息的时间
-    return BOX_ESTABLISHED
+def lock_time():  # 查询存款盒子的开始计息的时间
+    return BOX_LOCK_TIME
 
 
-def maturity():  # 查询存款盒子到期交割本金和利息时间
-    return BOX_MATURITY
+def end_time():  # 查询存款盒子到期交割本金和利息时间
+    return BOX_END_TIME
 
 
 def contract_keys():
-    return ["contractAccount:string", "owner:string", "name:string", "interest:integer", "bottom_line:integer", "ceiling:integer",
-            "price:integer", "start_time:integer", "established:integer", "maturity:integer", "transfer_on:bool",
+    return ["contractAccount:string", "owner:string", "name:string", "interest:integer", "bottom_line:integer",
+            "ceiling:integer",
+            "price:integer", "start_time:integer", "lock_time:integer", "end_time:integer", "transfer_on:bool",
             "org:string", "website:string", "logo:string", "intro:string"]
 
 
@@ -234,11 +239,11 @@ def query_box_status():  # 查看盒子当前状态
 
     if now_time <= BOX_START_TIME:  # 小于开始时间为可存入利息的发行期
         return ISSUE_STATUS
-    if interest_amount == BOX_INTEREST and BOX_START_TIME < now_time <= BOX_ESTABLISHED:  # 利息等于该存入的利息，并且当前时间大于开始时间，小于开始计息的时间，为可存入存款的存款吸纳期
-        return ABSORB_STATUS
-    if deposit_amount > BOX_BOTTOM_LINE and BOX_ESTABLISHED < now_time <= BOX_MATURITY:  # 存款数量大于最小存款数，并且当前时间大于存款吸纳期，小于最后的结束时间，为存款的锁定期
+    if interest_amount == BOX_INTEREST and BOX_START_TIME < now_time <= BOX_LOCK_TIME:  # 利息等于该存入的利息，并且当前时间大于开始时间，小于开始计息的时间，为可存入存款的存款吸纳期
         return DEPOSIT_STATUS
-    if now_time > BOX_MATURITY:             # 存款盒子结束，可以取出总收益
+    if deposit_amount > BOX_BOTTOM_LINE and BOX_LOCK_TIME < now_time <= BOX_END_TIME:  # 存款数量大于最小存款数，并且当前时间大于存款吸纳期，小于最后的结束时间，为存款的锁定期
+        return LOCK_STATUS
+    if interest_amount == BOX_INTEREST and deposit_amount > BOX_BOTTOM_LINE and now_time > BOX_END_TIME:  # 存款盒子结束，可以取出总收益
         return BOX_END
 
     return BOX_FAILED
@@ -246,8 +251,8 @@ def query_box_status():  # 查看盒子当前状态
 
 def interest_injection(amount):  # 利息注入
     sender = GetTxSender()
-    interest_balance = query_interest_balance()         # 查询盒子注入利息
-    user_interest_amount = query_user_inject_interest(sender)       # 用户对盒子注入的利息
+    interest_balance = query_interest_balance()  # 查询盒子注入利息
+    user_interest_amount = query_user_inject_interest(sender)  # 用户对盒子注入的利息
     user_inject_key = concat(KEY_USER_INJECT_INTEREST, sender)
 
     if BalanceOf(sender, [GARD_DENOM])[0] <= amount:
@@ -264,22 +269,24 @@ def interest_injection(amount):  # 利息注入
     else:
         sub = BOX_INTEREST - interest_balance
         if amount > sub:
-            raise Exception("超过可存入的利息总额，当期还差 %s" % sub)
+            raise Exception("超过可存入的利息总额")
         else:
             Put(KEY_BOX_INTEREST, interest_balance + amount)
 
-    if not user_interest_amount:                # 提交用户注入利息
+    if not user_interest_amount:  # 提交用户注入利息
         Put(user_inject_key, amount)
     else:
         Put(user_inject_key, user_interest_amount + amount)
 
     ContractBalanceInject(sender, GARD_DENOM, amount)  # 转账利息到合约地址
 
+    return True
 
-def interest_withdraw(amount):            # 利息取回
+
+def interest_withdraw(amount):  # 利息取回
     sender = GetTxSender()
-    user_interest_amount = query_user_inject_interest(sender)       # 用户对盒子注入的利息
-    interest_balance = query_interest_balance()                     # 盒子总利息
+    user_interest_amount = query_user_inject_interest(sender)  # 用户对盒子注入的利息
+    interest_balance = query_interest_balance()  # 盒子总利息
     user_inject_key = concat(KEY_USER_INJECT_INTEREST, sender)
 
     if not user_interest_amount or user_interest_amount == 0:
@@ -287,17 +294,19 @@ def interest_withdraw(amount):            # 利息取回
 
     box_stauts = query_box_status()
     if box_stauts != BOX_FAILED and box_stauts != ISSUE_STATUS:
-        raise Exception("当前无法取回注入利息")
+        raise Exception("当前盒子状态无法取回注入利息")
 
     if amount > user_interest_amount:
         raise Exception("取出金额大于注入的利息")
-    Put(user_inject_key, user_interest_amount - amount)     # 更改用户的利息
+    Put(user_inject_key, user_interest_amount - amount)  # 更改用户的利息
     Put(KEY_BOX_INTEREST, interest_balance - amount)
 
-    ContractBalanceSend(sender, GARD_DENOM, amount)         # 给其转入取出的利息
+    ContractBalanceSend(sender, GARD_DENOM, amount)  # 给其转入取出的利息
+
+    return True
 
 
-def deposit(amount):                    # 存款
+def deposit(amount):  # 存款
     sender = GetTxSender()
 
     if BalanceOf(sender, [GARD_DENOM])[0] <= amount:
@@ -306,40 +315,42 @@ def deposit(amount):                    # 存款
     if amount % BOX_PRICE != 0:
         raise Exception("存款必须是最少所存量的倍数")
 
-    if query_box_status() != ABSORB_STATUS:
+    if query_box_status() != DEPOSIT_STATUS:
         raise Exception("当前不处于存款吸纳期，无法存款")
 
     if amount > BOX_CEILING:
         raise Exception("大于最大允许的存款量")
 
-    deposit_amount = query_deposit_amount()       # 盒子存款总量
+    deposit_amount = query_deposit_amount()  # 盒子存款总量
     if not deposit_amount:
         Put(KEY_BOX_DEPOSIT_AMOUNT, amount)
     else:
         sub = BOX_CEILING - deposit_amount
         if amount > sub:
-            raise Exception("超过可存入的最大存款数，当前还差 %s" % sub)
+            raise Exception("超过可存入的最大存款数")
         else:
-            Put(KEY_BOX_DEPOSIT_AMOUNT, deposit_amount + amount)        # 提交存款盒子总量
+            Put(KEY_BOX_DEPOSIT_AMOUNT, deposit_amount + amount)  # 提交存款盒子总量
 
     user_deposit_amount = query_user_deposit_amount(sender)
     user_deposit_key = concat(KEY_USER_DEPOSIT_AMOUNT, sender)
     if not user_deposit_amount:
         Put(user_deposit_key, amount)
     else:
-        Put(user_deposit_key, user_deposit_amount + amount)            # 提交用户的的存款量
+        Put(user_deposit_key, user_deposit_amount + amount)  # 提交用户的的存款量
 
-    ContractBalanceInject(sender, GARD_DENOM, amount)       # 给盒子转账
+    ContractBalanceInject(sender, GARD_DENOM, amount)  # 给盒子转账
+
+    return True
 
 
-def redeem(amount):       # 赎回，取出存款
+def redeem(amount):  # 赎回，取出存款
     sender = GetTxSender()
-    box_deposit_amount = query_deposit_amount()     # 查询盒子的总存款
-    user_deposit_amount = query_user_deposit_amount(sender)     # 查询该用户的存款
+    box_deposit_amount = query_deposit_amount()  # 查询盒子的总存款
+    user_deposit_amount = query_user_deposit_amount(sender)  # 查询该用户的存款
     user_deposit_key = concat(KEY_USER_DEPOSIT_AMOUNT, sender)
 
     box_stauts = query_box_status()
-    if box_stauts != BOX_FAILED and box_stauts != ABSORB_STATUS:
+    if box_stauts != BOX_FAILED and box_stauts != DEPOSIT_STATUS:
         raise Exception("当前无法取出存款")
 
     if not user_deposit_amount or user_deposit_amount == 0:
@@ -348,12 +359,14 @@ def redeem(amount):       # 赎回，取出存款
     if amount > user_deposit_amount:
         raise Exception("剩余存款额度不足取出")
 
-    Put(KEY_BOX_DEPOSIT_AMOUNT, box_deposit_amount - amount)        # 提交新的剩余存款额度
-    Put(user_deposit_key, user_deposit_amount - amount)             # 提交新的用户存款额度
-    ContractBalanceSend(sender, GARD_DENOM, amount)                 # 给其转账
+    Put(KEY_BOX_DEPOSIT_AMOUNT, box_deposit_amount - amount)  # 提交新的剩余存款额度
+    Put(user_deposit_key, user_deposit_amount - amount)  # 提交新的用户存款额度
+    ContractBalanceSend(sender, GARD_DENOM, amount)  # 给其转账
+
+    return True
 
 
-def update_box_transfer_on():           # 更改存款凭证是否可以交易
+def update_box_transfer_on():  # 更改存款凭证是否可以交易
     sender = GetTxSender()
     if sender != Get(KEY_OWNER):
         raise Exception("请使用创建盒子的账户")
@@ -362,10 +375,12 @@ def update_box_transfer_on():           # 更改存款凭证是否可以交易
     if transfer_status:
         raise Exception("当前已经打开存款凭证可以交易状态，无法更改")
 
-    Put(KEY_BOX_TRANSFER_ON, True)      # 更改为true
+    Put(KEY_BOX_TRANSFER_ON, True)  # 更改为true
+
+    return True
 
 
-def box_transfer(to_address):           # 存款盒子凭证交易
+def box_transfer(to_address):  # 存款盒子凭证交易
     if not IsValid(to_address):
         raise Exception("请填写正确的地址")
     sender = GetTxSender()
@@ -373,17 +388,22 @@ def box_transfer(to_address):           # 存款盒子凭证交易
         raise Exception("不允许存款凭证交易")
 
     box_status = query_box_status()
-    if box_status != DEPOSIT_STATUS:
+    if box_status != LOCK_STATUS:
         raise Exception("当前不允许交易存款凭证")
 
-    sender_deposit_amount = query_user_deposit_amount(sender)       # 用户的存款
-    sender_deposit_key = concat(KEY_USER_DEPOSIT_AMOUNT, sender)    # 转让人
-    to_address_deposit_key = concat(KEY_USER_DEPOSIT_AMOUNT, to_address)       # 接收人
-    Put(sender_deposit_key, 0)          # 提交转让人的额度变成 0
-    Put(to_address_deposit_key, sender_deposit_amount)     # 提交接收人的额度
+    sender_deposit_amount = query_user_deposit_amount(sender)  # 用户的存款
+    if not sender_deposit_amount or sender_deposit_amount == 0:
+        raise Exception("当前用户没有存款，无法转让")
+
+    sender_deposit_key = concat(KEY_USER_DEPOSIT_AMOUNT, sender)  # 转让人
+    to_address_deposit_key = concat(KEY_USER_DEPOSIT_AMOUNT, to_address)  # 接收人
+    Put(sender_deposit_key, 0)  # 提交转让人的额度变成 0
+    Put(to_address_deposit_key, sender_deposit_amount)  # 提交接收人的额度
+
+    return True
 
 
-def withdraw():                 # 取出存款和利润
+def withdraw():  # 取出存款和利润
     sender = GetTxSender()
     box_status = query_box_status()
 
@@ -397,20 +417,18 @@ def withdraw():                 # 取出存款和利润
     if query_user_profit(sender) > 0:
         raise Exception("已经取出")
 
-    box_deposit_amount = query_deposit_amount()
     box_interest = query_interest_balance()
-    box_price = box_deposit_amount / BOX_PRICE              # 盒子被分成多少份
-    user_price = user_deposit_amount / BOX_PRICE            # 用户占了多少份
-    profit = box_interest / box_price * user_price          # 总利息被分成多少 乘以 用户所占份数
+    user_profit = user_deposit_amount * box_interest / BOX_CEILING  # 用户占利息的几成
 
-    Put(KEY_BOX_INTEREST, box_interest - profit)        # 更新利息
     user_receive_key = concat(KEY_USER_RECEIVE, sender)
-    Put(user_receive_key, profit)                       # 更新用户利息获得
+    Put(user_receive_key, user_profit)  # 更新用户利息获得
 
-    ContractBalanceSend(sender, GARD_DENOM, user_deposit_amount + profit)       # 给用户转入存款和获得的利息
+    ContractBalanceSend(sender, GARD_DENOM, user_deposit_amount + user_profit)  # 给用户转入存款和获得的利息
+
+    return True
 
 
-def query_user_profit(address):             # 查询用户获得利润
+def query_user_profit(address):  # 查询用户已经获得利润
     if not IsValid(address):
         raise Exception("请填写正确的地址")
     user_receive_key = concat(KEY_USER_RECEIVE, address)
